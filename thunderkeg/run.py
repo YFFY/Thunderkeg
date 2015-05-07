@@ -4,6 +4,7 @@
 from config.setting import *
 import os
 import sys
+from time import sleep
 import json
 import requests
 import logging
@@ -49,22 +50,47 @@ def getIndexingContent():
                 logger.error('i have found this is a invalid json in [{0}]'.format(fileAbsPath))
                 sys.exit()
             else:
-                indeingContentMap[fileName] = jsonContent
+                indeingContentMap[fileName] = rawContent
     logger.info('check file success, get indexing file content success')
     return indeingContentMap
 
-def sendPost():
+def sendImportPost():
     indexingContentMap = getIndexingContent()
     logger = getLogger()
     taskNameMap = dict()
+    headers = {'content-type': 'application/json'}
     for indexFile in indexingContentMap:
-        r = requests.post(importDataUrl, data=indexingContentMap.get(indexFile))
+        data = indexingContentMap.get(indexFile)
+        r = requests.post(importDataUrl, data=data, headers=headers)
         if r.status_code == 200:
             text = r.text
-            print text
+            try:
+                taskName = json.loads(text).get('task')
+            except Exception as ex:
+                logger.error('i have find a error when send post request: [{0}]'.format(ex))
+            else:
+                taskNameMap[indexFile] = taskName
+                logger.info('i have get a task: [{0}]'.format(taskName))
         else:
-            logger.error('send import request with post method failed, get response code : [{0}]'.format(r.status_code))
+            logger.error('send overlord request with post method failed, get response code : [{0}]'.format(r.status_code))
+    return taskNameMap
 
+
+def getTaskStatus():
+
+    taskNameMap = sendImportPost()
+    for key in taskNameMap:
+        taskName = taskNameMap.get(key)
+        r = requests.get(queryStatusUrl.format(taskName))
+        if r.status_code == 200:
+            status = json.loads(r.text).get('status').get('status')
+            if status != "RUNNING":
+                logging.info('get indexing file: [{0}]  task: [{1}] status: [{2}]'.format(key, taskName, status))
+            else:
+                logging.info('task: [{0}] status: [{1}]'.format(taskName, status))
+        else:
+            logging.error('i find a error when get task status, response code : [{0}]'.format(r.status_code))
+        sleep(360)
 
 if __name__ == '__main__':
-    sendPost()
+    getTaskStatus()
