@@ -41,7 +41,7 @@
   ],
   "firehose": {
     "type": "local",
-    "baseDir": "C:\\Users\\jeff.yu\\Desktop\\",
+    "baseDir": "/data/yeahmobi/",
     "filter": "yeahmobi-0-69data_2015-04-27T03_2015-04-27T04_yfnormalpf.json",
     "parser": {
       "timestampSpec": {

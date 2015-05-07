@@ -20,7 +20,7 @@ def getIndexingContent():
     logger = getLogger()
     indeingContentMap = dict()
     for fileName in indexFileList:
-        fileAbsPath = os.path.join(os.path.split(os.path.abspath(sys.path[0]))[0], 'indexing\{0}'.format(fileName))
+        fileAbsPath = os.path.join(os.path.split(os.path.abspath(sys.path[0]))[0], 'indexing/{0}'.format(fileName))
         if not os.path.exists(fileAbsPath):
             logger.error('i have not found indexing file: [{0}]'.format(fileAbsPath))
             sys.exit()
