@@ -29,51 +29,38 @@ def getIndexingContent():
             rawContent = fr.read()
             try:
                 jsonContent = json.loads(rawContent)
-                try:
-                    firehoseDir = jsonContent.get('firehose').get('baseDir')
-                    firehoseFile =  jsonContent.get('firehose').get('filter')
-                    fireAbsFilePath = os.path.join(firehoseDir, firehoseFile)
-                    if not os.path.exists(fireAbsFilePath):
-                        logger.error('i have not found firehouse file: [{0}]'.format(fireAbsFilePath))
-                        sys.exit()
-                    else:
-                        with open(fireAbsFilePath, 'r') as fs:
-                            for line in fs:
-                                stripline = line.strip()
-                                try:
-                                    json.loads(stripline)
-                                except Exception as ex:
-                                    logger.error('i have found a invalid json: [{0}] in firehouse filter file: [{1}], may be is can cause import data failed'.format(stripline, fireAbsFilePath))
-                except Exception as ex:
-                    logger.error('get firehouse filter file failed, may be there is no key "baseDir" or "filter" in firehouse section')
+                fireHouseDir = jsonContent.get('firehose').get('baseDir')
             except Exception as ex:
                 logger.error('i have found this is a invalid json in [{0}]'.format(fileAbsPath))
                 sys.exit()
             else:
                 indeingContentMap[fileName] = rawContent
     logger.info('check file success, get indexing file content success')
-    return indeingContentMap
+    return fireHouseDir, indeingContentMap
 
 def sendImportPost():
-    indexingContentMap = getIndexingContent()
+    fireHouseDir, indexingContentMap = getIndexingContent()
     logger = getLogger()
     taskNameMap = dict()
     headers = {'content-type': 'application/json'}
-    for indexFile in indexingContentMap:
-        data = indexingContentMap.get(indexFile)
-        r = requests.post(importDataUrl, data=data, headers=headers)
-        if r.status_code == 200:
-            text = r.text
-            try:
-                taskName = json.loads(text).get('task')
-            except Exception as ex:
-                logger.error('i have find a error when send post request: [{0}]'.format(ex))
+    for dataFileName in os.listdir(fireHouseDir):
+        for indexFile in indexingContentMap:
+            data = indexingContentMap.get(indexFile)
+            jsonData = json.loads(data)
+            jsonData['firehouse']['basedir'] = dataFileName
+            r = requests.post(importDataUrl, data=json.dumps(jsonData), headers=headers)
+            if r.status_code == 200:
+                text = r.text
+                try:
+                    taskName = json.loads(text).get('task')
+                except Exception as ex:
+                    logger.error('i have find a error when send post request: [{0}]'.format(ex))
+                else:
+                    taskNameMap[indexFile] = taskName
+                    logger.info('i have get a task: [{0}]'.format(taskName))
             else:
-                taskNameMap[indexFile] = taskName
-                logger.info('i have get a task: [{0}]'.format(taskName))
-        else:
-            logger.error('send overlord request with post method failed, get response code : [{0}]'.format(r.status_code))
-    return taskNameMap
+                logger.error('send overlord request with post method failed, get response code : [{0}]'.format(r.status_code))
+        return taskNameMap
 
 
 def getTaskStatus():
