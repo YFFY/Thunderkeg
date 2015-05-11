@@ -62,30 +62,27 @@ class Importer(object):
                     text = r.text
                     try:
                         taskName = json.loads(text).get('task')
+                        self.logger.info('get task: {0}'.format(taskName))
                     except Exception as ex:
                         self.logger.error('i have find a error when send post request: [{0}]'.format(ex))
                     else:
-                        taskDetailMap = dict()
-                        taskDetailMap['indexingfile'] = indexFile
-                        taskDetailMap['dataFileName'] = dataFileName
-                        self.taskMap[taskName] = taskDetailMap
-                        self.logger.info('i have get a task: [{0}]'.format(taskName))
+                        sleep(wait_time)
+                        status = self.getTaskStatus(taskName)
+                        if status == "RUNNING":
+                            sleep(wait_time)
+                            status = self.getTaskStatus(taskName)
+                            logging.info('{0} {1} {2} {3}'.format(dataFileName, indexFile, taskName, status))
+                        else:
+                            logging.info('{0} {1} {2} {3}'.format(dataFileName, indexFile, taskName, status))
                 else:
                     self.logger.error('send overlord request with post method failed, get response code : [{0}]'.format(r.status_code))
 
 
-    def getTaskStatus(self):
-        self.sendImportPost()
-        sleep(self.indexingCount * self.fileCount * wait_time)
-        for taskName in self.taskMap:
-            fileName = self.taskMap.get(taskName).get('dataFileName')
-            indexFile = self.taskMap.get(taskName).get('indexingfile')
-            r = requests.get(queryStatusUrl.format(taskName))
-            if r.status_code == 200:
-                status = json.loads(r.text).get('status').get('status')
-                logging.info('{0} {1} {2} {3}'.format(fileName, taskName, indexFile, status))
-            else:
-                logging.error('when query task status find response code : {0}'.format(r.status_code))
+    def getTaskStatus(self, taskName):
+        r = requests.get(queryStatusUrl.format(taskName))
+        if r.status_code == 200:
+            status = json.loads(r.text).get('status').get('status')
+            return status
 
 if __name__ == '__main__':
     i = Importer()
