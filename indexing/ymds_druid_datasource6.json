@@ -1,0 +1,59 @@
+{
+  "type": "index",
+  "dataSource": "ymds_druid_datasource.6",
+  "granularitySpec": {
+    "type": "uniform",
+    "gran": "hour",
+    "intervals": [
+      "2015-02-10T00:00:00/2016-04-15T23:59:59"
+    ]
+  },
+  "aggregators": [
+    {
+      "type": "count",
+      "name": "count"
+    },
+    {
+      "type": "longSum",
+      "fieldName": "conversion2",
+      "name": "conversion2"
+    },
+    {
+      "type": "longSum",
+      "fieldName": "conversion",
+      "name": "conversion"
+    },
+    {
+      "type": "longSum",
+      "fieldName": "click",
+      "name": "click"
+    }
+  ],
+  "firehose": {
+    "type": "local",
+    "baseDir": "/data/dianyi/",
+    "filter": "",
+    "parser": {
+      "timestampSpec": {
+        "column": "time_stamp"
+      },
+      "data": {
+        "format": "json",
+        "dimensions": [
+          "transaction_id",
+          "request_url",
+          "source",
+          "matched_format",
+          "status",
+          "message",
+          "conv_ip",
+          "offer_id",
+          "aff_id",
+          "conv_time",
+          "log_tye",
+          "datasource"
+        ]
+      }
+    }
+  }
+}

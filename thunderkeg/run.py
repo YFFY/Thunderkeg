@@ -61,7 +61,10 @@ class Importer(object):
                     except Exception as ex:
                         self.logger.error('i have find a error when send post request: [{0}]'.format(ex))
                     else:
-                        self.taskMap[dataFileName] = taskName
+                        taskDetailMap = dict()
+                        taskDetailMap['indexingfile'] = indexFile
+                        taskDetailMap['dataFileName'] = dataFileName
+                        self.taskMap[taskName] = taskDetailMap
                         self.logger.info('i have get a task: [{0}]'.format(taskName))
                 else:
                     self.logger.error('send overlord request with post method failed, get response code : [{0}]'.format(r.status_code))
@@ -69,29 +72,16 @@ class Importer(object):
 
     def getTaskStatus(self):
         self.sendImportPost()
-        againMap = dict()
         sleep(self.indexingCount * self.fileCount * wait_time)
-        for fileName in self.taskMap:
-            taskName = self.taskMap[fileName]
+        for taskName in self.taskMap:
+            fileName = self.taskMap.get('taskName').get('dataFileName')
+            indexFile = self.taskMap.get('taskName').get('indexingfile')
             r = requests.get(queryStatusUrl.format(taskName))
             if r.status_code == 200:
                 status = json.loads(r.text).get('status').get('status')
-                if status == "RUNNING":
-                    againMap[fileName] = taskName
-                else:
-                    logging.info('{0} {1} {2}'.format(fileName, taskName, status))
+                logging.info('{0} {1} {2} {3}'.format(fileName, taskName, indexFile, status))
             else:
                 logging.error('when query task status find response code : {0}'.format(r.status_code))
-        sleep(wait_time * len(againMap))
-        if againMap:
-            for fileName in againMap:
-                taskName = againMap[fileName]
-                r = requests.get(queryStatusUrl.format(taskName))
-                if r.status_code == 200:
-                    status = json.loads(r.text).get('status').get('status')
-                    logging.info('{0} {1} {2}'.format(fileName, taskName, status))
-                else:
-                    logging.error('when query task status find response code : {0}'.format(r.status_code))
 
 if __name__ == '__main__':
     i = Importer()
