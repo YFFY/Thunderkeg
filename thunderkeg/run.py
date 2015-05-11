@@ -86,4 +86,4 @@ class Importer(object):
 
 if __name__ == '__main__':
     i = Importer()
-    i.getTaskStatus()
+    i.sendImportPost()
