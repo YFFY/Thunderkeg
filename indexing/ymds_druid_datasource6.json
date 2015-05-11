@@ -31,7 +31,7 @@
   ],
   "firehose": {
     "type": "local",
-    "baseDir": "/data/dianyi/",
+    "baseDir": "/data/yeahmobi/",
     "filter": "",
     "parser": {
       "timestampSpec": {
