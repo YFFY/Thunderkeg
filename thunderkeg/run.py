@@ -11,21 +11,22 @@ import logging
 import logging.config
 
 
-def getslogger():
+def getlogger():
     loggingConfigFile = os.path.join(os.path.split(os.path.abspath(sys.path[0]))[0], 'config/logging.conf')
     logging.config.fileConfig(loggingConfigFile)
-    logger = logging.get.logger()
+    logger = logging.getLogger()
     return logger
 
 class Importer(object):
 
-    def __init(self):
-        self.self.logger = getlogger()
-        self.taskMap = dict
+    def __init__(self):
+        self.logger = getlogger()
+        self.taskMap = dict()
 
     def getIndexingContent(self):
         indeingContentMap = dict()
         self.indexingCount = len(indexFileList)
+
         for fileName in indexFileList:
             fileAbsPath = os.path.join(os.path.split(os.path.abspath(sys.path[0]))[0], 'indexing/{0}'.format(fileName))
             if not os.path.exists(fileAbsPath):
@@ -45,9 +46,12 @@ class Importer(object):
         return fireHouseDir, indeingContentMap
 
     def sendImportPost(self):
-        fireHouseDir, indexingContentMap = getIndexingContent()
+        fireHouseDir, indexingContentMap = self.getIndexingContent()
         headers = {'content-type': 'application/json'}
         self.fileCount = len(os.listdir(fireHouseDir))
+        self.logger.info('get indexing file count: {0}'.format(self.indexingCount))
+        self.logger.info('get data file count: {0}'.format(self.fileCount))
+        self.logger.info('i should get task count: {0}'.format(self.indexingCount * self.fileCount))
         for dataFileName in os.listdir(fireHouseDir):
             for indexFile in indexingContentMap:
                 data = indexingContentMap.get(indexFile)
@@ -74,8 +78,8 @@ class Importer(object):
         self.sendImportPost()
         sleep(self.indexingCount * self.fileCount * wait_time)
         for taskName in self.taskMap:
-            fileName = self.taskMap.get('taskName').get('dataFileName')
-            indexFile = self.taskMap.get('taskName').get('indexingfile')
+            fileName = self.taskMap.get(taskName).get('dataFileName')
+            indexFile = self.taskMap.get(taskName).get('indexingfile')
             r = requests.get(queryStatusUrl.format(taskName))
             if r.status_code == 200:
                 status = json.loads(r.text).get('status').get('status')
