@@ -9,3 +9,4 @@ indexFileList = ["ymds_druid_datasource.json"]
 
 importDataUrl = "http://172.20.0.49:8090/druid/indexer/v1/task"   # post this
 queryStatusUrl = "http://172.20.0.49:8090/druid/indexer/v1/task/{0}/status" # get this
+wait_time = 1800

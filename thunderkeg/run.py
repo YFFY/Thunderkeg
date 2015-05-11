@@ -11,73 +11,88 @@ import logging
 import logging.config
 
 
-def getLogger():
+def getslogger():
     loggingConfigFile = os.path.join(os.path.split(os.path.abspath(sys.path[0]))[0], 'config/logging.conf')
     logging.config.fileConfig(loggingConfigFile)
-    logger = logging.getLogger()
+    logger = logging.get.logger()
     return logger
 
-def getIndexingContent():
-    logger = getLogger()
-    indeingContentMap = dict()
-    for fileName in indexFileList:
-        fileAbsPath = os.path.join(os.path.split(os.path.abspath(sys.path[0]))[0], 'indexing/{0}'.format(fileName))
-        if not os.path.exists(fileAbsPath):
-            logger.error('i have not found indexing file: [{0}]'.format(fileAbsPath))
-            sys.exit()
-        with open(fileAbsPath, 'r') as fr:
-            rawContent = fr.read()
-            try:
-                jsonContent = json.loads(rawContent)
-                fireHouseDir = jsonContent.get('firehose').get('baseDir')
-            except Exception as ex:
-                logger.error('i have found this is a invalid json in [{0}]'.format(fileAbsPath))
+class Importer(object):
+
+    def __init(self):
+        self.self.logger = getlogger()
+        self.taskMap = dict
+
+    def getIndexingContent(self):
+        indeingContentMap = dict()
+        self.indexingCount = len(indexFileList)
+        for fileName in indexFileList:
+            fileAbsPath = os.path.join(os.path.split(os.path.abspath(sys.path[0]))[0], 'indexing/{0}'.format(fileName))
+            if not os.path.exists(fileAbsPath):
+                self.logger.error('i have not found indexing file: [{0}]'.format(fileAbsPath))
                 sys.exit()
-            else:
-                indeingContentMap[fileName] = rawContent
-    logger.info('check file success, get indexing file content success')
-    return fireHouseDir, indeingContentMap
-
-def sendImportPost():
-    fireHouseDir, indexingContentMap = getIndexingContent()
-    logger = getLogger()
-    taskNameMap = dict()
-    headers = {'content-type': 'application/json'}
-    for dataFileName in os.listdir(fireHouseDir):
-        for indexFile in indexingContentMap:
-            data = indexingContentMap.get(indexFile)
-            jsonData = json.loads(data)
-            jsonData['firehouse']['basedir'] = dataFileName
-            r = requests.post(importDataUrl, data=json.dumps(jsonData), headers=headers)
-            if r.status_code == 200:
-                text = r.text
+            with open(fileAbsPath, 'r') as fr:
+                rawContent = fr.read()
                 try:
-                    taskName = json.loads(text).get('task')
+                    jsonContent = json.loads(rawContent)
+                    fireHouseDir = jsonContent.get('firehose').get('baseDir')
                 except Exception as ex:
-                    logger.error('i have find a error when send post request: [{0}]'.format(ex))
+                    self.logger.error('i have found this is a invalid json in [{0}]'.format(fileAbsPath))
+                    sys.exit()
                 else:
-                    taskNameMap[indexFile] = taskName
-                    logger.info('i have get a task: [{0}]'.format(taskName))
+                    indeingContentMap[fileName] = rawContent
+        self.logger.info('check file success, get indexing file content success')
+        return fireHouseDir, indeingContentMap
+
+    def sendImportPost(self):
+        fireHouseDir, indexingContentMap = getIndexingContent()
+        headers = {'content-type': 'application/json'}
+        self.fileCount = len(os.listdir(fireHouseDir))
+        for dataFileName in os.listdir(fireHouseDir):
+            for indexFile in indexingContentMap:
+                data = indexingContentMap.get(indexFile)
+                jsonData = json.loads(data)
+                jsonData['firehose']['filter'] = dataFileName
+                r = requests.post(importDataUrl, data=json.dumps(jsonData), headers=headers)
+                if r.status_code == 200:
+                    text = r.text
+                    try:
+                        taskName = json.loads(text).get('task')
+                    except Exception as ex:
+                        self.logger.error('i have find a error when send post request: [{0}]'.format(ex))
+                    else:
+                        self.taskMap[dataFileName] = taskName
+                        self.logger.info('i have get a task: [{0}]'.format(taskName))
+                else:
+                    self.logger.error('send overlord request with post method failed, get response code : [{0}]'.format(r.status_code))
+
+
+    def getTaskStatus(self):
+        self.sendImportPost()
+        againMap = dict()
+        sleep(self.indexingCount * self.fileCount * wait_time)
+        for fileName in self.taskMap:
+            taskName = self.taskMap[fileName]
+            r = requests.get(queryStatusUrl.format(taskName))
+            if r.status_code == 200:
+                status = json.loads(r.text).get('status').get('status')
+                if status == "RUNNING":
+                    againMap[fileName] = taskName
+                else:
+                    logging.info('{0} {1} {2}'.format(fileName, taskName, status))
             else:
-                logger.error('send overlord request with post method failed, get response code : [{0}]'.format(r.status_code))
-        return taskNameMap
-
-
-def getTaskStatus():
-
-    taskNameMap = sendImportPost()
-    for key in taskNameMap:
-        taskName = taskNameMap.get(key)
-        r = requests.get(queryStatusUrl.format(taskName))
-        if r.status_code == 200:
-            status = json.loads(r.text).get('status').get('status')
-            if status != "RUNNING":
-                logging.info('get indexing file: [{0}]  task: [{1}] status: [{2}]'.format(key, taskName, status))
-            else:
-                logging.info('task: [{0}] status: [{1}]'.format(taskName, status))
-        else:
-            logging.error('i find a error when get task status, response code : [{0}]'.format(r.status_code))
-        sleep(360)
+                logging.error('when query task status find response code : {0}'.format(r.status_code))
+        sleep(wait_time * len(againMap))
+        if againMap:
+            for fileName in againMap:
+                taskName = againMap[fileName]
+                r = requests.get(queryStatusUrl.format(taskName))
+                if r.status_code == 200:
+                    status = json.loads(r.text).get('status').get('status')
+                    logging.info('{0} {1} {2}'.format(fileName, taskName, status))
+                else:
+                    logging.error('when query task status find response code : {0}'.format(r.status_code))
 
 if __name__ == '__main__':
-    getTaskStatus()
+    i = Importer()
+    i.getTaskStatus()
