@@ -1,0 +1,100 @@
+{
+  "type": "index",
+  "dataSource": "ymds_druid_datasource",
+  "granularitySpec": {
+    "type": "uniform",
+    "gran": "hour",
+    "intervals": [
+      "2014-04-29T07:00:00/2016-04-29T08:00:00"
+    ]
+  },
+  "aggregators": [
+    {
+      "type": "count",
+      "name": "count"
+    },
+    {
+      "type": "longSum",
+      "fieldName": "request",
+      "name": "request"
+    },
+    {
+      "type": "longSum",
+      "fieldName": "impression",
+      "name": "impression"
+    },
+    {
+      "type": "longSum",
+      "fieldName": "click",
+      "name": "click"
+    },
+    {
+      "type": "longSum",
+      "fieldName": "conversion",
+      "name": "conversion"
+    },
+    {
+      "type": "doubleSum",
+      "fieldName": "cost",
+      "name": "cost"
+    },
+    {
+      "type": "doubleSum",
+      "fieldName": "revenue",
+      "name": "revenue"
+    }
+  ],
+  "firehose": {
+    "type": "local",
+    "baseDir": "/data/native",
+    "filter": "history.json",
+    "parser": {
+      "timestampSpec": {
+        "column": "time_stamp"
+      },
+      "data": {
+        "format": "json",
+        "dimensions": [
+          "udid",
+          "user_id",
+          "app_id",
+          "slot_id",
+          "width",
+          "height",
+          "dev_type",
+          "os",
+          "brand",
+          "model",
+          "osv",
+          "app_cate",
+          "country",
+          "ip",
+          "seller_id",
+          "bid_floor",
+          "exp_id",
+          "act",
+          "ngp",
+          "status",
+          "charge_type",
+          "price",
+          "divide",
+          "ad_bundle",
+          "ad_cate",
+          "ad_source",
+          "ad_size",
+          "ad_rate",
+          "ad_download",
+          "ad_review",
+          "preload",
+          "ad_id",
+          "cpa",
+          "rpa",
+          "ecpm",
+          "log_type",
+          "search_id",
+          "log_id"
+        ]
+      }
+    }
+  }
+}
