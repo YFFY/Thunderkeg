@@ -1,6 +1,6 @@
 {
   "type": "index",
-  "dataSource": "ymds_druid_datasource",
+  "dataSource": "native_report_datasource",
   "granularitySpec": {
     "type": "uniform",
     "gran": "hour",

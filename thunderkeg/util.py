@@ -17,6 +17,7 @@ def mergeFile(path):
                 with open(absfile, 'r') as fr:
                     for line in fr:
                         fa.writelines(line)
+            print 'create {0} complete'.format(mergefile)
 
 def transfer(path):
     for f in os.listdir(path):
@@ -25,4 +26,5 @@ def transfer(path):
             os.system(command)
 
 if __name__ == '__main__':
+    mergeFile('/sqldata/track_server/track_server.done.driud.2')
     transfer('/sqldata/yufeng')
