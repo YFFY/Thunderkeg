@@ -6,4 +6,4 @@
 indexFileList = ["native.indexing.json"]
 importDataUrl = "http://10.1.5.61:8090/druid/indexer/v1/task"   # post this
 queryStatusUrl = "http://10.1.5.61:8090/druid/indexer/v1/task/{0}/status" # get this
-wait_time = 1800
+wait_time = 30
