@@ -92,7 +92,8 @@
           "ecpm",
           "log_type",
           "search_id",
-          "log_id"
+          "log_id",
+          "time_stamp"
         ]
       }
     }
